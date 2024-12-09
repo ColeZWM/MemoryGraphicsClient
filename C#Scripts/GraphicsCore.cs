@@ -9,6 +9,7 @@ using System.Reflection.Context;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
+using Json.More;
 
 //Note: This client cannot be ran while a software that uses your screen data is open (ex: screenshare)
 
@@ -66,7 +67,7 @@ namespace MemoryGraphicsClient
 {
     public class GraphicsCore
     {
-
+        public static UI ui = new UI();
         public static DirectoryInfo screenShotStorageDi = new DirectoryInfo("D:\\VSPrograms\\MemoryGraphicsClient\\ScreenShotStorage\\");
 
         public static int screenHeight = 1080;
@@ -205,7 +206,7 @@ namespace MemoryGraphicsClient
             if(keyPositions.Count == 0) { keyPositions.Add(0); }
             return keyPositions.ToArray();
         }
-        public static string scanForObjects(string[] folderBaseObjects, bool writeOutData) //used for scanning objects on screen
+        public static string scanForObjects(string[] folderBaseObjects, bool writeOutData, out Point pointFoudAt) //used for scanning objects on screen
         {
             screenshot();
             //coreIDSet = dataManage.getCoreIDSets(out similarPixelsIDset);
@@ -223,7 +224,7 @@ namespace MemoryGraphicsClient
                 return output;
             }
 
-            string quickScan(DirectBitmap screenC) //sends out the largest sim pix value detected 
+            string quickScan(DirectBitmap screenC, out Point foundAt) //sends out the largest sim pix value detected 
             { 
                 if (writeOutData)
                 {
@@ -243,29 +244,32 @@ namespace MemoryGraphicsClient
 
                 double coreID = 0;
 
-                int collum;
-                int row;
+                int collum = 0;
+                int row = 0;
 
                     DirectBitmap tempBP;
 
                     int[] keyPositions = getKeyPosition(dataManage.dominateColors);
                     int simPix;
 
+                    foundAt = new Point();
                     for (int i = 0; i < keyPositions.Length; i++)
                     {
                         row = Math.DivRem(keyPositions[i], screenW, out collum);
                         tempBP = lenseData.buildLense(bpWidth, bpHeight, Math.Abs(row-40), Math.Abs(collum - 42), screen);
                         simPix = lookForObjects(tempBP, dataManage.dominateColors.ToList());
-                        coreID = dataManage.defineImage(tempBP, simPix,dataManage.coreIDsForLettersEnglish);
+                        coreID = dataManage.defineImage(tempBP, simPix, dataManage.coreIDSForChromeData);
                         
                         if (simPix != 0 && writeOutData)
                         {
                             Console.WriteLine("simPixelsFound: " + simPix);
+                            foundAt.X = collum;
+                            foundAt.Y = row;
                             Console.WriteLine("coreID: " + coreID);
                             Console.WriteLine("row: " + row);
                         }
                         
-                        symmbol = checkAmountForSymbol(coreID, simPix, dataManage.coreIDsForLettersEnglish, dataManage.simPixelsForLettersEnglish, dataManage.lettersEnglish);
+                        symmbol = checkAmountForSymbol(coreID, simPix, dataManage.coreIDSForChromeData, dataManage.simPixelsForChromeData, dataManage.outputForChromeData);
                         if(symmbol != "0")
                         {
                            charsOnScreen += symmbol;
@@ -274,7 +278,7 @@ namespace MemoryGraphicsClient
 
                 return charsOnScreen;
             }
-            return quickScan(screen);
+            return quickScan(screen, out pointFoudAt);
         }
         private class User32
         {
@@ -302,9 +306,10 @@ namespace MemoryGraphicsClient
             {
                 GC.Collect();
                 Console.Clear();
-
-                string scanResult = scanForObjects(dataManage.arial_22P_WGreen, false);
-
+                Point detectedAt;
+                string scanResult = scanForObjects(dataManage.chromeData, true, out detectedAt);
+                Console.WriteLine(detectedAt.X + " : " + detectedAt.Y);
+                ui.SetCursorPosition(detectedAt.X, detectedAt.Y);   
                 Console.WriteLine("symbolsFound: " + scanResult);
             }
         }

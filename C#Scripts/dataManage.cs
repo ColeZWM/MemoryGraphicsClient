@@ -1,5 +1,6 @@
 ﻿using lense;
 using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.ObjectPool;
 using System.Drawing;
 
 namespace MemoryGraphicsClient.C_Scripts
@@ -186,6 +187,26 @@ namespace MemoryGraphicsClient.C_Scripts
             ,188
         };
 
+        public static string[] chromeData = new string[]
+        {
+            "D:\\VSPrograms\\MemoryGraphicsClient\\ObjectImgs\\Screenshot_chromeLogo.png"
+        };
+
+        public static string[] outputForChromeData = new string[]
+        {
+            "logoFound_Chrome"
+        };
+
+        public static double[] coreIDSForChromeData = new double[]
+        {
+           88.97680669631386
+        };
+
+        public static int[] simPixelsForChromeData = new int[]
+        {
+            449
+        };
+
         public static int getRiseOfSlope(int y1, int y2)
         {
             return y2 - y1;
@@ -218,7 +239,7 @@ namespace MemoryGraphicsClient.C_Scripts
             return x * x;
         }
 
-        public static Color[] getDominateColors(string[] samples)
+        public static Color[] getDominateColors(string[] samples, List<Color> blacklist)
         {
             Console.WriteLine("gettingDominateColorsFromSamples...");
             DirectBitmap dBP;
@@ -252,8 +273,9 @@ namespace MemoryGraphicsClient.C_Scripts
                     }
 
                     currentColor = dBP.GetPixel(x, y);
-                    if (!domColors.Contains(currentColor) && currentColor != Color.FromArgb(255, 255, 255, 255))
+                    if (!domColors.Contains(currentColor) && !blacklist.Contains(currentColor) && (currentColor.R > 40 && currentColor.G > 40 && currentColor.B > 40))
                     {
+                        Console.WriteLine(currentColor);
                         domColors.Add(currentColor);
                     }
                 }
@@ -263,8 +285,8 @@ namespace MemoryGraphicsClient.C_Scripts
             Console.WriteLine("UniqueColors: " + filteredDomColors.Length);
             return filteredDomColors;
         }
-
-        public static Color[] dominateColors = getDominateColors(arial_22P_WGreen);
+        public static List<Color> blackListDColors = new List<Color>() { Color.FromArgb(255, 37, 36, 31), Color.FromArgb(255, 33, 42, 36), Color.FromArgb(255, 37, 36, 34), Color.FromArgb(255, 35, 34, 34), Color.FromArgb(255, 33, 34, 33), Color.FromArgb(255, 34, 33, 32), Color.FromArgb(255, 34, 40, 36), Color.FromArgb(255, 42, 40, 34), Color.FromArgb(255, 35, 34, 34), Color.FromArgb(255, 36, 33, 33), Color.FromArgb(255, 35, 33, 33), Color.FromArgb(255, 33, 31, 39), Color.FromArgb(255, 31, 31, 31), Color.FromArgb(255, 32, 32, 32), Color.FromArgb(255, 33, 33, 33), Color.FromArgb(255, 34, 34, 34), Color.FromArgb(255, 35, 35, 35), Color.FromArgb(255, 36, 36, 36), Color.FromArgb(255, 37, 37, 37), Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 38, 38, 38), Color.FromArgb(255, 39, 39, 39),Color.FromArgb(255, 255, 255, 255) };
+        public static Color[] dominateColors = getDominateColors(chromeData, blackListDColors);
         public static double defineImage(DirectBitmap ImageToDefine, int simPix, double[] coreIDSToCheck)
         {
             int width = ImageToDefine.Width;
@@ -288,7 +310,7 @@ namespace MemoryGraphicsClient.C_Scripts
 
                 TDpoint[] pointsPShrink;
                 cube shrinkCube = polyRendering.shrinkWrapCube(1, out pointsPShrink); //change param as needed
-
+                
                 double bL = shrinkCube.Side3;
 
                 double cL = PolygonalRendering.constructLine(pointsPShrink[2].X, pointsPShrink[0].X, pointsPShrink[2].Y, pointsPShrink[0].Y);
